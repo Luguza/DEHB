@@ -141,7 +141,10 @@ class SHBracketManager:
             pending = self.sh_bracket[fidelity]
             done = self._sh_bracket[fidelity]
             waiting = np.abs(self.n_configs[i] - pending - done)
-            entry = f"|{fidelity_cell.format(fidelity)}|{cell.format(pending)}|{cell.format(waiting)}|{cell.format(done)}|"
+            entry = (
+                f"|{fidelity_cell.format(fidelity)}|{cell.format(pending)}"
+                f"|{cell.format(waiting)}|{cell.format(done)}|"
+            )
             table.append(entry)
         table.append(_hline)
         return "\n".join(table)

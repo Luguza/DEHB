@@ -4,7 +4,7 @@ import ConfigSpace
 from src.dehb.optimizers.de import DEBase
 
 
-def create_toy_DEBase(configspace: ConfigSpace.ConfigurationSpace):
+def create_toy_de_base(configspace: ConfigSpace.ConfigurationSpace):
     """Creates a toy DEBase instance for conversion tests.
 
     Args:
@@ -42,7 +42,7 @@ class TestConversion:
             },
         )
 
-        de = create_toy_DEBase(cs)
+        de = create_toy_de_base(cs)
 
         test_config = cs.sample_configuration()
 
@@ -60,7 +60,7 @@ class TestConversion:
             },
         )
 
-        de = create_toy_DEBase(cs)
+        de = create_toy_de_base(cs)
 
         test_config = cs.sample_configuration()
 
@@ -79,7 +79,7 @@ class TestConversion:
             ConfigSpace.OrdinalHyperparameter("test_ordinal", sequence=[10, 20, 30]),
         )
 
-        de = create_toy_DEBase(cs)
+        de = create_toy_de_base(cs)
 
         test_config = cs.sample_configuration()
 
@@ -99,7 +99,7 @@ class TestConversion:
             },
         )
 
-        de = create_toy_DEBase(cs)
+        de = create_toy_de_base(cs)
 
         test_config = cs.sample_configuration()
 
@@ -119,7 +119,7 @@ class TestConversion:
             },
         )
 
-        de = create_toy_DEBase(cs)
+        de = create_toy_de_base(cs)
 
         test_config = cs.sample_configuration()
 

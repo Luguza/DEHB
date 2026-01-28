@@ -374,12 +374,12 @@ class TestAskTell:
             objective_function=objective_function,
         )
         job_info = dehb.ask()
-        id = job_info["config_id"]
+        config_id = job_info["config_id"]
         fid = job_info["fidelity"]
         conf = job_info["config"]
 
         # before telling, entry should be empty
-        saved_score = dehb.config_repository.configs[id].results[fid].score
+        saved_score = dehb.config_repository.configs[config_id].results[fid].score
         assert saved_score == np.inf
 
         result = objective_function(conf, fid)

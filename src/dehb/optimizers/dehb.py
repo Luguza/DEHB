@@ -7,7 +7,6 @@ import time
 from copy import deepcopy
 from pathlib import Path
 from threading import Timer
-from typing import List, Tuple, Union
 
 import ConfigSpace
 import numpy as np
@@ -15,7 +14,8 @@ import pandas as pd
 from distributed import Client
 from loguru import logger
 
-from ..utils import ConfigRepository, SHBracketManager
+from dehb.utils import ConfigRepository, SHBracketManager
+
 from .de import AsyncDE
 
 _logger_props = {
@@ -68,7 +68,7 @@ class DEHBBase:
         # Benchmark related variables
         self.cs = cs
         self.use_configspace = (
-            True if isinstance(self.cs, ConfigSpace.ConfigurationSpace) else False
+            bool(isinstance(self.cs, ConfigSpace.ConfigurationSpace))
         )
         if self.use_configspace:
             self.cs.seed(self._original_seed)
@@ -128,7 +128,7 @@ class DEHBBase:
 
     def _setup_logger(self, resume, kwargs):
         """Sets up the logger."""
-        log_level = kwargs["log_level"] if "log_level" in kwargs else "WARNING"
+        log_level = kwargs.get("log_level", "WARNING")
         _logger_props["level"] = log_level
         logger.configure(handlers=[{"sink": sys.stdout, "level": log_level}])
         self.output_path = Path(kwargs["output_path"]) if "output_path" in kwargs else Path("./")
@@ -171,7 +171,7 @@ class DEHBBase:
     def _init_population(self):
         raise NotImplementedError("Redefine!")
 
-    def _get_next_iteration(self, iteration: int) -> Tuple[np.array, np.array]:
+    def _get_next_iteration(self, iteration: int) -> tuple[np.array, np.array]:
         """Computes the Successive Halving spacing.
 
         Given the iteration index, computes the fidelity spacing to be used and
@@ -198,7 +198,7 @@ class DEHBBase:
 
         return ns, fidelities
 
-    def get_incumbents(self) -> Tuple[Union[dict, ConfigSpace.Configuration], float]:
+    def get_incumbents(self) -> tuple[dict | ConfigSpace.Configuration, float]:
         """Retrieve current incumbent configuration and score.
 
         Returns:
@@ -352,7 +352,7 @@ class DEHB(DEHBBase):
         bracket_id = job_info["bracket_id"]
         kwargs = job_info["kwargs"]
         res = self.de[fidelity].f_objective(config, fidelity, **kwargs)
-        info = res["info"] if "info" in res else {}
+        info = res.get("info", {})
         run_info = {
             "job_info": {
                 "config": config,
@@ -374,7 +374,7 @@ class DEHB(DEHBBase):
             run_info.update({"device_id": device_id})
         return run_info
 
-    def _create_cuda_visible_devices(self, available_gpus: List[int], start_id: int) -> str:
+    def _create_cuda_visible_devices(self, available_gpus: list[int], start_id: int) -> str:
         """Generates a string to set the CUDA_VISIBLE_DEVICES environment variable.
 
         Given a list of available GPU device IDs and a preferred ID (start_id), the environment
@@ -387,8 +387,7 @@ class DEHB(DEHBBase):
         available_gpus.remove(start_id)
         self.rng.shuffle(available_gpus)
         final_variable = [str(start_id)] + [str(_id) for _id in available_gpus]
-        final_variable = ",".join(final_variable)
-        return final_variable
+        return ",".join(final_variable)
 
     def _distribute_gpus(self):
         """Function to create a GPU usage tracker dict.
@@ -402,12 +401,9 @@ class DEHB(DEHBBase):
             available_gpus = os.environ["CUDA_VISIBLE_DEVICES"]
             available_gpus = available_gpus.strip().split(",")
             self.available_gpus = [int(_id) for _id in available_gpus]
-        except KeyError as e:
-            print(
-                "Unable to find valid GPU devices. " f"Environment variable {e!s} not visible!",
-            )
+        except KeyError:
             self.available_gpus = []
-        self.gpu_usage = dict()
+        self.gpu_usage = {}
         for _id in self.available_gpus:
             self.gpu_usage[_id] = 0
 
@@ -503,14 +499,14 @@ class DEHB(DEHBBase):
             n, r = self._get_next_iteration(i)
             for j, r_j in enumerate(r):
                 self._max_pop_size[r_j] = (
-                    max(n[j], self._max_pop_size[r_j]) if r_j in self._max_pop_size.keys() else n[j]
+                    max(n[j], self._max_pop_size[r_j]) if r_j in self._max_pop_size else n[j]
                 )
 
     def _init_subpop(self):
         """List of DE objects corresponding to the fidelities."""
         self.de = {}
         seeds = self.rng.integers(0, 2**32 - 1, size=len(self._max_pop_size))
-        for (i, f), _seed in zip(enumerate(self._max_pop_size.keys()), seeds):
+        for (_i, f), _seed in zip(enumerate(self._max_pop_size.keys()), seeds):
             self.de[f] = AsyncDE(
                 **self.de_params,
                 pop_size=self._max_pop_size[f],
@@ -772,7 +768,7 @@ class DEHB(DEHBBase):
                 break
         return job_info
 
-    def ask(self, n_configs: int = 1) -> Union[dict, List[dict]]:
+    def ask(self, n_configs: int = 1) -> dict | list[dict]:
         """Get the next configuration to run from the optimizer.
 
         The retrieved configuration can then be evaluated by the user.
@@ -1126,7 +1122,7 @@ class DEHB(DEHBBase):
         self._tell_counter += 1
         # Update bracket information
         fitness, cost = float(result["fitness"]), float(result["cost"])
-        info = result["info"] if "info" in result else {}
+        info = result.get("info", {})
         fidelity, parent_id = job_info["fidelity"], job_info["parent_id"]
         config, config_id = job_info["config"], job_info["config_id"]
         bracket_id = job_info["bracket_id"]
@@ -1183,7 +1179,7 @@ class DEHB(DEHBBase):
         total_cost=None,
         single_node_with_gpus=False,
         **kwargs,
-    ) -> Tuple[np.array, np.array, np.array]:
+    ) -> tuple[np.array, np.array, np.array]:
         """Main interface to run optimization by DEHB.
 
         This function waits on workers and if a worker is free, asks for a configuration and a

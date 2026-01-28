@@ -89,8 +89,7 @@ class Model(nn.Module):
         x = self.fc1(x)
         # Output layer
         x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
+        return F.log_softmax(x, dim=1)
 
     def _update_size(self, dim, kernel_size, stride, padding, dilation):
         return int(np.floor((dim + 2 * padding - (dilation * (kernel_size - 1) + 1)) / stride + 1))
@@ -181,7 +180,7 @@ def train_and_evaluate(config, max_fidelity, verbose=False, **kwargs):
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
     model = Model(config).to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=config["lr"])
-    for epoch in range(1, int(max_fidelity)+1):
+    for _epoch in range(1, int(max_fidelity)+1):
         train(model, device, train_loader, optimizer)
     accuracy = evaluate(model, device, test_loader, acc=True)
     if verbose:
@@ -218,12 +217,11 @@ def objective_function(config, fidelity, **kwargs):
     test_loss = evaluate(model, device, test_loader)
 
     # dict representation that DEHB requires
-    res = {
+    return {
         "fitness": valid_loss,
         "cost": cost,
         "info": {"test_loss": test_loss, "fidelity": fidelity},
     }
-    return res
 
 
 def input_arguments():
@@ -256,8 +254,7 @@ def input_arguments():
                         help="Decides verbosity of DEHB optimization")
     parser.add_argument("--runtime", type=float, default=300,
                         help="Total time in seconds as fidelity to run DEHB")
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def main():
@@ -318,7 +315,7 @@ def main():
                 # if client is None, a Dask client with n_workers is set up
                 client=client, n_workers=args.n_workers)
 
-    traj, runtime, history = dehb.run(total_cost=args.runtime,
+    _traj, _runtime, history = dehb.run(total_cost=args.runtime,
                                       # arguments below are part of **kwargs shared across workers
                                       train_set=train_set, valid_set=valid_set, test_set=test_set,
                                       single_node_with_gpus=single_node_with_gpus, device=device)

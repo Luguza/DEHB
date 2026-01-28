@@ -11,7 +11,7 @@ from dehb import DEHB
 def create_plot_for_benchmark(results: dict, output_path: Path,
                               benchmark_name: str):
     plt.clf()
-    results = dict(reversed(sorted(results.items())))
+    results = dict(sorted(results.items(), reverse=True))
     for version, data in results.items():
         mean_trajectory = data["mean_trajectory"]
         std_trajectory = data["std_trajectory"]
@@ -32,11 +32,11 @@ def create_table_for_benchmark(results: dict) -> list:
     table = []
     header = ["DEHB Version"]
     for budget in [.2, .4, .6, .8, 1]:
-        arbitrary_key = list(results.keys())[0]
+        arbitrary_key = next(iter(results.keys()))
         traj_length = len(results[arbitrary_key]["mean_trajectory"])
         header.append(str(int(budget * traj_length)))
     table.append(header)
-    results = dict(reversed(sorted(results.items())))
+    results = dict(sorted(results.items(), reverse=True))
     for version in results:
         row = [version]
         mean_traj = results[version]["mean_trajectory"]

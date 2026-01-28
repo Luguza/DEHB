@@ -124,7 +124,6 @@ def main():
     for benchmark_name in args.benchmarks:
         trajectories = []
         for seed in seeds:
-            print(f"Running benchmark {benchmark_name} on seed {seed}")
             np.random.seed(seed)
             random.seed(seed)
             dehb_params["seed"] = int(seed)

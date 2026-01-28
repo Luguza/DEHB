@@ -38,7 +38,7 @@ def worker_command(scheduler_file, worker_name, gpu=False, gpu_per_worker=1):
 
 
 def slurm_header(args, worker=False):
-    cmds = list()
+    cmds = []
     # adding shebang
     cmds.append("#! /bin/bash")
     node = args.worker_p if worker else args.scheduler_p
@@ -62,8 +62,7 @@ def slurm_header(args, worker=False):
     cmds.append("#SBATCH -e {}".format(log_pattern.format("err")))
     cmds.append("#SBATCH -o {}".format(log_pattern.format("out")))
     cmds.append("\n")
-    cmds = "\n".join(cmds)
-    return cmds
+    return "\n".join(cmds)
 
 
 def input_arguments():
@@ -133,8 +132,7 @@ def input_arguments():
         "-J", default="dehb", type=str, help="Prefix to scheduler and worker job names",
     )
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
@@ -156,7 +154,6 @@ if __name__ == "__main__":
     cmd += "\n"
     with open(scheduler_file, "w") as f:
         f.writelines(cmd)
-    print(f"Saving scheduler job script to {scheduler_file}")
     # generating worker script
     cmd = slurm_header(args, worker=True)
     cmd += setup_cmd
@@ -168,4 +165,3 @@ if __name__ == "__main__":
     )
     with open(worker_file, "w") as f:
         f.writelines(cmd)
-    print(f"Saving worker job script to {worker_file}")

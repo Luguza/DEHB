@@ -94,7 +94,7 @@ def create_toy_optimizer(
     max_fidelity: float,
     eta: int,
     objective_function: typing.Callable,
-    save_freq: typing.Optional[str] = None,
+    save_freq: str | None = None,
     output_path: str = "logs",
     resume: bool = False,
 ):
@@ -137,8 +137,7 @@ def objective_function(x: ConfigSpace.Configuration, fidelity: float, **kwargs):
     """
     y = np.random.uniform()
     cost = 5
-    result = {"fitness": y, "cost": cost}
-    return result
+    return {"fitness": y, "cost": cost}
 
 
 class TestBudgetExhaustion:
@@ -650,7 +649,7 @@ class TestDeprecation:
         """Verifies, that an error is thrown if the user uses the old budget interface."""
         cs = create_toy_searchspace()
         with pytest.raises(TypeError):
-            dehb = DEHB(
+            DEHB(
                 cs,
                 objective_function,
                 len(cs.get_hyperparameters()),

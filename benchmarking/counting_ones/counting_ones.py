@@ -62,7 +62,7 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         """
 
     def _check_configuration(foo):
-        """Decorator to enable checking the input configuration
+        """Decorator to enable checking the input configuration.
 
         Uses the check_configuration of the ConfigSpace class to ensure
         that all specified values are valid, and no conditionals are violated
@@ -105,7 +105,7 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         return(wrapper)
 
     def __call__ (self, configuration, **kwargs):
-        """Provides interface to use, e.g., SciPy optimizers"""
+        """Provides interface to use, e.g., SciPy optimizers."""
         return(self.objective_function(configuration, **kwargs)["function_value"])
 
 

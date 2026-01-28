@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import numpy as np
 
 
-class SHBracketManager(object):
+class SHBracketManager:
     """Synchronous Successive Halving utilities"""
 
     def __init__(self, n_configs, fidelities, bracket_id=None):
@@ -47,17 +49,14 @@ class SHBracketManager(object):
         if self.sh_bracket[self.get_fidelity()] > 0:
             # the current rung still has unallocated jobs (>0)
             return self.get_fidelity()
-        else:
-            # the current rung has no more jobs to allocate, increment it
-            rung = (self.current_rung + 1) % self.n_rungs
-            if self.sh_bracket[self.get_fidelity(rung)] > 0:
-                # the incremented rung has unallocated jobs (>0)
-                return self.get_fidelity(rung)
-            else:
-                # all jobs for this bracket has been allocated/bracket is complete
-                # no more fidelities to evaluate and can return None
-                pass
-            return None
+        # the current rung has no more jobs to allocate, increment it
+        rung = (self.current_rung + 1) % self.n_rungs
+        if self.sh_bracket[self.get_fidelity(rung)] > 0:
+            # the incremented rung has unallocated jobs (>0)
+            return self.get_fidelity(rung)
+        # all jobs for this bracket has been allocated/bracket is complete
+        # no more fidelities to evaluate and can return None
+        return None
 
     def register_job(self, fidelity):
         """Registers the allocation of a configuration for the fidelity and updates current rung
@@ -132,8 +131,8 @@ class SHBracketManager(object):
 
     def __repr__(self):
         cell_width = 10
-        cell = "{{:^{}}}".format(cell_width)
-        fidelity_cell = "{{:^{}.2f}}".format(cell_width)
+        cell = f"{{:^{cell_width}}}"
+        fidelity_cell = f"{{:^{cell_width}.2f}}"
         header = "|{}|{}|{}|{}|".format(
             cell.format("fidelity"),
             cell.format("pending"),
@@ -146,12 +145,7 @@ class SHBracketManager(object):
             pending = self.sh_bracket[fidelity]
             done = self._sh_bracket[fidelity]
             waiting = np.abs(self.n_configs[i] - pending - done)
-            entry = "|{}|{}|{}|{}|".format(
-                fidelity_cell.format(fidelity),
-                cell.format(pending),
-                cell.format(waiting),
-                cell.format(done),
-            )
+            entry = f"|{fidelity_cell.format(fidelity)}|{cell.format(pending)}|{cell.format(waiting)}|{cell.format(done)}|"
             table.append(entry)
         table.append(_hline)
         return "\n".join(table)

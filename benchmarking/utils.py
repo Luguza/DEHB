@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -46,7 +48,7 @@ def create_table_for_benchmark(results: dict) -> list:
 
     return table
 
-class DEHBOptimizerBase():
+class DEHBOptimizerBase:
     def __init__(self, dehb_params, fevals, brackets, walltime, use_ask_tell, use_restart,
                  benchmark_name) -> None:
         self.fevals = fevals

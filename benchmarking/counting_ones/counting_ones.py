@@ -2,6 +2,7 @@
 ### This code is used from HPOlib1.5 (https://github.com/automl/HPOlib1.5). Since HPOlib1.5 is not a
 ### proper package and HPOBench does not feature the CountingOnes benchmark, we include it this way.
 ###
+from __future__ import annotations
 
 import abc
 
@@ -20,7 +21,6 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         value of the global optima. New benchmarks should be derived from
         this base class or one of its child classes.
         """
-
         self.rng = np.random.default_rng(rng)
         self.configuration_space = self.get_configuration_space()
 
@@ -39,12 +39,11 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         ----------
         configuration : dict-like
 
-        Returns
+        Returns:
         -------
         dict
             Must contain at least the key `function_value`.
         """
-        pass
 
     @abc.abstractmethod
     def objective_function_test(self, configuration, **kwargs):
@@ -56,20 +55,19 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         ----------
         configuration : dict-like
 
-        Returns
+        Returns:
         -------
         dict
             Must contain at least the key `function_value`.
         """
-        pass
 
     def _check_configuration(foo):
-        """ Decorator to enable checking the input configuration
+        """Decorator to enable checking the input configuration
 
-            Uses the check_configuration of the ConfigSpace class to ensure
-            that all specified values are valid, and no conditionals are violated
+        Uses the check_configuration of the ConfigSpace class to ensure
+        that all specified values are valid, and no conditionals are violated
 
-            Can be combined with the _configuration_as_array decorator.
+        Can be combined with the _configuration_as_array decorator.
         """
         def wrapper(self, configuration, **kwargs):
             if not isinstance(configuration, CS.Configuration):
@@ -77,8 +75,8 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
                     squirtle = {k: configuration[i] for (i,k) in enumerate(self.configuration_space)}
                     wartortle = CS.Configuration(self.configuration_space, squirtle)
                 except Exception as e:
-                    raise Exception('Error during the conversion of the provided '
-                                    'into a ConfigSpace.Configuration object') from e
+                    raise Exception("Error during the conversion of the provided "
+                                    "into a ConfigSpace.Configuration object") from e
             else:
                 wartortle = configuration
             self.configuration_space.check_configuration(wartortle)
@@ -86,19 +84,19 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         return(wrapper)
 
     def _configuration_as_array(foo, data_type=np.float64):
-        """ Decorator to allow the first input argument to 'objective_function' to be an array.
+        """Decorator to allow the first input argument to 'objective_function' to be an array.
 
-            For all continuous benchmarks it is often required that the input to the benchmark
-            can be a (NumPy) array. By adding this to the objective function, both inputs types,
-            ConfigSpace.Configuration and array, are possible.
+        For all continuous benchmarks it is often required that the input to the benchmark
+        can be a (NumPy) array. By adding this to the objective function, both inputs types,
+        ConfigSpace.Configuration and array, are possible.
 
-            Can be combined with the _check_configuration decorator.
+        Can be combined with the _check_configuration decorator.
         """
         def wrapper(self, configuration, **kwargs):
             if isinstance(configuration, ConfigSpace.Configuration):
                 blastoise = np.array(
                     [ configuration[k] for k in configuration],
-                    dtype=data_type
+                    dtype=data_type,
                 )
 
             else:
@@ -107,12 +105,12 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
         return(wrapper)
 
     def __call__ (self, configuration, **kwargs):
-        """ Provides interface to use, e.g., SciPy optimizers """
-        return(self.objective_function(configuration, **kwargs)['function_value'])
+        """Provides interface to use, e.g., SciPy optimizers"""
+        return(self.objective_function(configuration, **kwargs)["function_value"])
 
 
     def test(self, n_runs=5, *args, **kwargs):
-        """ Draws some random configuration and call objective_fucntion(_test).
+        """Draws some random configuration and call objective_fucntion(_test).
 
         Parameters
         ----------
@@ -134,9 +132,9 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def get_configuration_space():
-        """ Defines the configuration space for each benchmark.
+        """Defines the configuration space for each benchmark.
 
-        Returns
+        Returns:
         -------
         ConfigSpace.ConfigurationSpace
             A valid configuration space for the benchmark's parameters
@@ -146,9 +144,9 @@ class AbstractBenchmark(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def get_meta_information():
-        """ Provides some meta information about the benchmark.
+        """Provides some meta information about the benchmark.
 
-        Returns
+        Returns:
         -------
         dict
             some human-readable information
@@ -163,13 +161,13 @@ class CountingOnes(AbstractBenchmark):
 
         y = 0
         for h in config:
-            if 'float' in h:
+            if "float" in h:
                 samples = np.random.binomial(1, config[h], int(budget))
                 y += np.mean(samples)
             else:
                 y += config[h]
 
-        return {'function_value': -y}
+        return {"function_value": -y}
 
     def objective_function_test(self, x, **kwargs):
         return self.objective_function(x)
@@ -177,7 +175,7 @@ class CountingOnes(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     def objective_function_test(self, config, **kwargs):
-        return {'function_value': -np.sum(config.get_array())}
+        return {"function_value": -np.sum(config.get_array())}
 
     @staticmethod
     def get_configuration_space(n_categorical=1, n_continuous=1, seed=0):
@@ -185,9 +183,9 @@ class CountingOnes(AbstractBenchmark):
         for i in range(n_categorical):
             cs.add_hyperparameter(CS.CategoricalHyperparameter("cat_%d" % i, [0, 1]))
         for i in range(n_continuous):
-            cs.add_hyperparameter(CS.UniformFloatHyperparameter('float_%d' % i, lower=0, upper=1))
+            cs.add_hyperparameter(CS.UniformFloatHyperparameter("float_%d" % i, lower=0, upper=1))
         return cs
 
     @staticmethod
     def get_meta_information():
-        return {'name': 'Counting Ones'}
+        return {"name": "Counting Ones"}

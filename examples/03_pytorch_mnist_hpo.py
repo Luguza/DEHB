@@ -111,7 +111,7 @@ def get_configspace(seed=None):
 
     # Hyperparameter for FC layer
     hidden = CSH.UniformIntegerHyperparameter(
-        "hidden", lower=32, upper=256, log=True, default_value=128
+        "hidden", lower=32, upper=256, log=True, default_value=128,
     )
 
     # Regularization Hyperparameter
@@ -119,7 +119,7 @@ def get_configspace(seed=None):
 
     # Training Hyperparameters
     batch_size = CSH.OrdinalHyperparameter(
-        "batch_size", sequence=[2, 4, 8, 16, 32, 64], default_value=4
+        "batch_size", sequence=[2, 4, 8, 16, 32, 64], default_value=4,
     )
     lr = CSH.UniformFloatHyperparameter("lr", lower=1e-6, upper=0.1, log=True,
                                         default_value=1e-3)
@@ -270,14 +270,14 @@ def main():
 
     # Data Preparation
     transform = transforms.Compose([
-        transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))
+        transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)),
     ])
     train_set = torchvision.datasets.MNIST(
-        root="./data", train=True, download=True, transform=transform
+        root="./data", train=True, download=True, transform=transform,
     )
     train_set, valid_set = torch.utils.data.random_split(train_set, [50000, 10000])
     test_set = torchvision.datasets.MNIST(
-        root="./data", train=False, download=True, transform=transform
+        root="./data", train=False, download=True, transform=transform,
     )
 
     # Get configuration space
@@ -335,7 +335,7 @@ def main():
     if args.refit_training:
         dehb.logger.info("Retraining on complete training data to compute test metrics...")
         train_set = torchvision.datasets.MNIST(
-            root="./data", train=True, download=True, transform=transform
+            root="./data", train=True, download=True, transform=transform,
         )
         incumbent = dehb.vector_to_configspace(dehb.inc_config)
         acc = train_and_evaluate(incumbent, args.max_fidelity, verbose=True,

@@ -1,4 +1,5 @@
-import os
+from __future__ import annotations
+
 from pathlib import Path
 from typing import List
 
@@ -151,19 +152,16 @@ class DEBase:
             if any(idx):
                 selection = self.rng.choice(np.arange(len(self.population)), size, replace=False)
                 return self.population[selection]
-            else:
-                if len(alt_pop) < 3:
-                    alt_pop = np.vstack((alt_pop, self.population))
-                selection = self.rng.choice(np.arange(len(alt_pop)), size, replace=False)
-                alt_pop = np.stack(alt_pop)
-                return alt_pop[selection]
-        else:
-            selection = self.rng.choice(np.arange(len(self.population)), size, replace=False)
-            return self.population[selection]
+            if len(alt_pop) < 3:
+                alt_pop = np.vstack((alt_pop, self.population))
+            selection = self.rng.choice(np.arange(len(alt_pop)), size, replace=False)
+            alt_pop = np.stack(alt_pop)
+            return alt_pop[selection]
+        selection = self.rng.choice(np.arange(len(self.population)), size, replace=False)
+        return self.population[selection]
 
     def boundary_check(self, vector: np.ndarray) -> np.ndarray:
-        """
-        Checks whether each of the dimensions of the input vector are within [0, 1].
+        """Checks whether each of the dimensions of the input vector are within [0, 1].
         If not, values of those dimensions are replaced with the type of fix selected.
 
         if fix_type == 'random', the values are replaced with a random sampling from (0,1)
@@ -173,7 +171,7 @@ class DEBase:
         ----------
         vector : array
 
-        Returns
+        Returns:
         -------
         array
         """
@@ -193,7 +191,7 @@ class DEBase:
         """
         # creates a ConfigSpace object dict with all hyperparameters present, the inactive too
         new_config = ConfigSpace.util.impute_inactive_values(
-            self.cs.get_default_configuration()
+            self.cs.get_default_configuration(),
         ).get_dictionary()
         # iterates over all hyperparameters and normalizes each based on its type
         for i, hyper in enumerate(self.cs.get_hyperparameters()):
@@ -220,7 +218,7 @@ class DEBase:
         # the mapping from unit hypercube to the actual config space may lead to illegal
         # configurations based on conditions defined, which need to be deactivated/removed
         new_config = ConfigSpace.util.deactivate_inactive_hyperparameters(
-            configuration=new_config, configuration_space=self.cs
+            configuration=new_config, configuration_space=self.cs,
         )
         return new_config
 
@@ -398,7 +396,7 @@ class DE(DEBase):
                 self.inc_config = config
                 self.inc_id = config_id
             self.config_repository.tell_result(
-                config_id, float(fidelity or 0), res["fitness"], res["cost"], info
+                config_id, float(fidelity or 0), res["fitness"], res["cost"], info,
             )
             traj.append(self.inc_score)
             runtime.append(cost)
@@ -441,8 +439,7 @@ class DE(DEBase):
         if population is None:
             self.fitness = np.array(fitnesses)
             return traj, runtime, history
-        else:
-            return traj, runtime, history, np.array(fitnesses), np.array(ages)
+        return traj, runtime, history, np.array(fitnesses), np.array(ages)
 
     def mutation_rand1(self, r1, r2, r3):
         """Performs the 'rand1' type of DE mutation"""
@@ -520,7 +517,7 @@ class DE(DEBase):
         """Performs the exponential crossover of DE"""
         n = self.rng.integers(0, self.dimensions)
         L = 0
-        while (self.rng.random() < self.crossover_prob) and L < self.dimensions:
+        while (self.rng.random() < self.crossover_prob) and self.dimensions > L:
             idx = (n + L) % self.dimensions
             target[idx] = mutant[idx]
             L = L + 1
@@ -546,7 +543,7 @@ class DE(DEBase):
             info = res["info"] if "info" in res else dict()
             # log result to config repo
             self.config_repository.tell_result(
-                trial_ids[i], float(fidelity or 0), fitness, cost, info
+                trial_ids[i], float(fidelity or 0), fitness, cost, info,
             )
             # selection -- competition between parent[i] -- child[i]
             ## equality is important for landscape exploration
@@ -616,7 +613,7 @@ class DE(DEBase):
         for i in range(generations):
             if verbose:
                 print(
-                    "Generation {:<2}/{:<2} -- {:<0.7}".format(i + 1, generations, self.inc_score)
+                    f"Generation {i + 1:<2}/{generations:<2} -- {self.inc_score:<0.7}",
                 )
             traj, runtime, history = self.evolve_generation(fidelity=fidelity, **kwargs)
             self.traj.extend(traj)
@@ -687,7 +684,7 @@ class AsyncDE(DE):
             "random",
             "worst",
             "deferred",
-        ], "{} is not a valid choice for type of DE".format(self.async_strategy)
+        ], f"{self.async_strategy} is not a valid choice for type of DE"
 
     def _add_random_population(self, pop_size, population=None, fitness=[], age=[]):
         """Adds random individuals to the population"""
@@ -769,7 +766,7 @@ class AsyncDE(DE):
                 self.inc_config = pop[i]
                 self.inc_id = pop_ids[i]
             self.config_repository.tell_result(
-                pop_ids[i], float(fidelity or 0), fitness, cost, info
+                pop_ids[i], float(fidelity or 0), fitness, cost, info,
             )
             traj.append(self.inc_score)
             runtime.append(cost)
@@ -855,7 +852,7 @@ class AsyncDE(DE):
             traj, runtime, history = self.selection(trials, trial_ids, fidelity, **kwargs)
             return traj, runtime, history
 
-        elif self.async_strategy == "immediate":
+        if self.async_strategy == "immediate":
             for i in range(self.pop_size):
                 target = self.population[i]
                 donor = self.mutation(current=target, best=best, alt_pop=alt_pop)
@@ -880,33 +877,33 @@ class AsyncDE(DE):
                 history.extend(de_history)
             return traj, runtime, history
 
-        else:  # async_strategy == 'random' or async_strategy == 'worst':
-            for count in range(self.pop_size):
-                # choosing target individual
-                if self.async_strategy == "random":
-                    i = self.rng.choice(np.arange(self.pop_size))
-                else:  # async_strategy == 'worst'
-                    i = np.argsort(-self.fitness)[0]
-                target = self.population[i]
-                mutant = self.mutation(current=target, best=best, alt_pop=alt_pop)
-                trial = self.crossover(target, mutant)
-                trial = self.boundary_check(trial)
-                trial_id = self.config_repository.announce_config(trial, float(fidelity or 0))
-                # evaluating a single trial population for the i-th individual
-                de_traj, de_runtime, de_history, fitnesses, costs = self.eval_pop(
-                    trial.reshape(1, self.dimensions),
-                    np.array([trial_id]),
-                    fidelity=fidelity,
-                    **kwargs,
-                )
-                # one-vs-one selection
-                ## can replace the i-the population despite not completing one iteration
-                if fitnesses[0] <= self.fitness[i]:
-                    self.population[i] = trial
-                    self.fitness[i] = fitnesses[0]
-                traj.extend(de_traj)
-                runtime.extend(de_runtime)
-                history.extend(de_history)
+        # async_strategy == 'random' or async_strategy == 'worst':
+        for count in range(self.pop_size):
+            # choosing target individual
+            if self.async_strategy == "random":
+                i = self.rng.choice(np.arange(self.pop_size))
+            else:  # async_strategy == 'worst'
+                i = np.argsort(-self.fitness)[0]
+            target = self.population[i]
+            mutant = self.mutation(current=target, best=best, alt_pop=alt_pop)
+            trial = self.crossover(target, mutant)
+            trial = self.boundary_check(trial)
+            trial_id = self.config_repository.announce_config(trial, float(fidelity or 0))
+            # evaluating a single trial population for the i-th individual
+            de_traj, de_runtime, de_history, fitnesses, costs = self.eval_pop(
+                trial.reshape(1, self.dimensions),
+                np.array([trial_id]),
+                fidelity=fidelity,
+                **kwargs,
+            )
+            # one-vs-one selection
+            ## can replace the i-the population despite not completing one iteration
+            if fitnesses[0] <= self.fitness[i]:
+                self.population[i] = trial
+                self.fitness[i] = fitnesses[0]
+            traj.extend(de_traj)
+            runtime.extend(de_runtime)
+            history.extend(de_history)
 
         return traj, runtime, history
 
@@ -923,10 +920,10 @@ class AsyncDE(DE):
         for i in range(generations):
             if verbose:
                 print(
-                    "Generation {:<2}/{:<2} -- {:<0.7}".format(i + 1, generations, self.inc_score)
+                    f"Generation {i + 1:<2}/{generations:<2} -- {self.inc_score:<0.7}",
                 )
             traj, runtime, history = self.evolve_generation(
-                fidelity=fidelity, best=self.inc_config, **kwargs
+                fidelity=fidelity, best=self.inc_config, **kwargs,
             )
             self.traj.extend(traj)
             self.runtime.extend(runtime)

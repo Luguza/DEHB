@@ -1,7 +1,6 @@
-import typing
+from __future__ import annotations
 
 import ConfigSpace
-import pytest
 from src.dehb.optimizers.de import DEBase
 
 
@@ -77,7 +76,7 @@ class TestConversion:
         """Test for ordinal hyperparameter."""
         cs = ConfigSpace.ConfigurationSpace()
         cs.add_hyperparameter(
-            ConfigSpace.OrdinalHyperparameter("test_ordinal", sequence=[10, 20, 30])
+            ConfigSpace.OrdinalHyperparameter("test_ordinal", sequence=[10, 20, 30]),
         )
 
         de = create_toy_DEBase(cs)

@@ -1,5 +1,4 @@
-"""
-Generates 2 scripts to deploy a Dask cluster to SLURM.
+"""Generates 2 scripts to deploy a Dask cluster to SLURM.
 
 Example use:
 ```
@@ -13,9 +12,10 @@ sbatch temp/scheduler.sh
 sbatch temp/workers.sh
 ```
 """
+from __future__ import annotations
 
-import os
 import argparse
+import os
 from pathlib import Path
 
 
@@ -31,7 +31,7 @@ def worker_command(scheduler_file, worker_name, gpu=False, gpu_per_worker=1):
     extra_args = " --reconnect --nprocs 1 --nthreads 1"
     cmd = cmd.format(scheduler_file, worker_name)
     if gpu:
-        cmd += ' --resources "GPU={}"'.format(gpu_per_worker)
+        cmd += f' --resources "GPU={gpu_per_worker}"'
     cmd += extra_args
     cmd += "\n"
     return cmd
@@ -43,20 +43,20 @@ def slurm_header(args, worker=False):
     cmds.append("#! /bin/bash")
     node = args.worker_p if worker else args.scheduler_p
     # adding target node
-    cmds.append("#SBATCH -p {}".format(node))
+    cmds.append(f"#SBATCH -p {node}")
     if not worker:
         # adding cpu request
-        cmds.append("#SBATCH -c {}".format(args.c))
+        cmds.append(f"#SBATCH -c {args.c}")
     # adding timelimit
-    cmds.append("#SBATCH -t {}".format(args.t))
+    cmds.append(f"#SBATCH -t {args.t}")
     # adding job name
     suffix = "worker" if worker else "scheduler"
-    cmds.append("#SBATCH -J {}-{}".format(args.J, suffix))
+    cmds.append(f"#SBATCH -J {args.J}-{suffix}")
     if args.gpu and worker:
         # adding gpu request
-        cmds.append("#SBATCH --gres=gpu:{}".format(args.gpu_per_worker))
+        cmds.append(f"#SBATCH --gres=gpu:{args.gpu_per_worker}")
         # making an array job for the workers
-        cmds.append("#SBATCH -a 1-{}".format(args.nworkers))
+        cmds.append(f"#SBATCH -a 1-{args.nworkers}")
     log_pattern = str(args.slurm_dump_path / "slurm_%j-%a-%x.{}")
     # adding error directory
     cmds.append("#SBATCH -e {}".format(log_pattern.format("err")))
@@ -99,10 +99,10 @@ def input_arguments():
         help="Path to dump the slurm logs",
     )
     parser.add_argument(
-        "--nworkers", default=10, type=int, help="Number of workers to run"
+        "--nworkers", default=10, type=int, help="Number of workers to run",
     )
     parser.add_argument(
-        "--worker_name", default="w", type=str, help="Dask worker name prefix"
+        "--worker_name", default="w", type=str, help="Dask worker name prefix",
     )
     parser.add_argument("-c", default=2, type=int, help="CPUs per task requested")
     parser.add_argument(
@@ -112,7 +112,7 @@ def input_arguments():
         help="If set, the workers request GPUs",
     )
     parser.add_argument(
-        "--gpu_per_worker", default=1, type=int, help="Number of GPUs per worker"
+        "--gpu_per_worker", default=1, type=int, help="Number of GPUs per worker",
     )
     parser.add_argument(
         "--scheduler_p",
@@ -130,7 +130,7 @@ def input_arguments():
     )
     parser.add_argument("-t", default="1:00:00", type=str, help="TIMELIMIT")
     parser.add_argument(
-        "-J", default="dehb", type=str, help="Prefix to scheduler and worker job names"
+        "-J", default="dehb", type=str, help="Prefix to scheduler and worker job names",
     )
 
     args = parser.parse_args()
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     os.makedirs(Path(args.output_path).absolute(), exist_ok=True)
     scheduler_file = output_path / "scheduler.sh"
     worker_file = output_path / "workers.sh"
-    setup_cmd = "source {}\n\n".format(Path(args.setup_file).absolute())
+    setup_cmd = f"source {Path(args.setup_file).absolute()}\n\n"
 
     # generating scheduler script
     cmd = slurm_header(args, worker=False)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     cmd += "\n"
     with open(scheduler_file, "w") as f:
         f.writelines(cmd)
-    print("Saving scheduler job script to {}".format(scheduler_file))
+    print(f"Saving scheduler job script to {scheduler_file}")
     # generating worker script
     cmd = slurm_header(args, worker=True)
     cmd += setup_cmd
@@ -168,4 +168,4 @@ if __name__ == "__main__":
     )
     with open(worker_file, "w") as f:
         f.writelines(cmd)
-    print("Saving worker job script to {}".format(worker_file))
+    print(f"Saving worker job script to {worker_file}")

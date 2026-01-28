@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -48,7 +50,7 @@ class DEHBBase:
             raise TypeError(
                 "Parameters min_budget and max_budget have been deprecated since "
                 "v0.1.0. Please use the new parameters min_fidelity and max_fidelity "
-                "or downgrade to a version prior to v0.1.0"
+                "or downgrade to a version prior to v0.1.0",
             )
         if seed is None:
             seed = int(np.random.default_rng().integers(0, 2**32 - 1))
@@ -104,7 +106,7 @@ class DEHBBase:
                 self.logger.error(
                     "If you have a fixed fidelity, "
                     "you can instead run DE. For more information checkout: "
-                    "https://automl.github.io/DEHB/references/de"
+                    "https://automl.github.io/DEHB/references/de",
                 )
             raise AssertionError()
         self.eta = eta
@@ -148,7 +150,7 @@ class DEHBBase:
                 -int(np.log(self.min_fidelity / self.max_fidelity) / np.log(self.eta)) + 1
             )
             self.fidelities = self.max_fidelity * np.power(
-                self.eta, -np.linspace(start=self.max_SH_iter - 1, stop=0, num=self.max_SH_iter)
+                self.eta, -np.linspace(start=self.max_SH_iter - 1, stop=0, num=self.max_SH_iter),
             )
 
     def reset(self, *, reset_seeds: bool = True):
@@ -282,7 +284,7 @@ class DEHB(DEHBBase):
             self.n_workers = n_workers
             if self.n_workers > 1:
                 self.client = Client(
-                    n_workers=self.n_workers, processes=True, threads_per_worker=1, scheduler_port=0
+                    n_workers=self.n_workers, processes=True, threads_per_worker=1, scheduler_port=0,
                 )  # port 0 makes Dask select a random free port
             else:
                 self.client = None
@@ -310,14 +312,14 @@ class DEHB(DEHBBase):
                 self.logger.error(
                     "Checkpoint could not be loaded. "
                     "Please refer to the prior warning in order to "
-                    "identifiy the problem."
+                    "identifiy the problem.",
                 )
                 raise AttributeError(
-                    "Checkpoint could not be loaded. Check the logs" "for more information"
+                    "Checkpoint could not be loaded. Check the logs" "for more information",
                 )
         elif (self.output_path / "dehb_state.json").exists():
             self.logger.warning(
-                "A checkpoint already exists, " "results could potentially be overwritten."
+                "A checkpoint already exists, " "results could potentially be overwritten.",
             )
 
     def __getstate__(self):
@@ -398,7 +400,7 @@ class DEHB(DEHBBase):
             self.available_gpus = [int(_id) for _id in available_gpus]
         except KeyError as e:
             print(
-                "Unable to find valid GPU devices. " f"Environment variable {str(e)} not visible!"
+                "Unable to find valid GPU devices. " f"Environment variable {e!s} not visible!",
             )
             self.available_gpus = []
         self.gpu_usage = dict()
@@ -513,7 +515,7 @@ class DEHB(DEHBBase):
             )
             self.de[f].population = self.de[f].init_population(pop_size=self._max_pop_size[f])
             self.de[f].population_ids = self.config_repository.announce_population(
-                self.de[f].population, f
+                self.de[f].population, f,
             )
             self.de[f].fitness = np.array([np.inf] * self._max_pop_size[f])
             # adding attributes to DEHB objects to allow communication across subpopulations
@@ -538,7 +540,7 @@ class DEHB(DEHBBase):
         self.iteration_counter += 1  # iteration counter gives the bracket count or bracket ID
         n_configs, fidelities = self._get_next_iteration(self.iteration_counter)
         bracket = SHBracketManager(
-            n_configs=n_configs, fidelities=fidelities, bracket_id=self.iteration_counter
+            n_configs=n_configs, fidelities=fidelities, bracket_id=self.iteration_counter,
         )
         self.active_brackets.append(bracket)
         return bracket
@@ -546,8 +548,7 @@ class DEHB(DEHBBase):
     def _get_worker_count(self):
         if isinstance(self.client, Client):
             return len(self.client.ncores())
-        else:
-            return 1
+        return 1
 
     def _is_worker_available(self):
         """Checks if at least one worker is available to run a job."""
@@ -597,13 +598,13 @@ class DEHB(DEHBBase):
                     # skipping already present individual to allow diversity and reduce redundancy
                     continue
                 self.de[high_fidelity].promotion_pop = np.append(
-                    self.de[high_fidelity].promotion_pop, [individual], axis=0
+                    self.de[high_fidelity].promotion_pop, [individual], axis=0,
                 )
                 self.de[high_fidelity].promotion_pop_ids = np.append(
-                    self.de[high_fidelity].promotion_pop_ids, individual_id
+                    self.de[high_fidelity].promotion_pop_ids, individual_id,
                 )
                 self.de[high_fidelity].promotion_fitness = np.append(
-                    self.de[high_fidelity].promotion_pop, promotion_candidate_fitness[pop_idx]
+                    self.de[high_fidelity].promotion_pop, promotion_candidate_fitness[pop_idx],
                 )
             # retaining only n_configs
             self.de[high_fidelity].promotion_pop = self.de[high_fidelity].promotion_pop[:n_configs]
@@ -653,7 +654,7 @@ class DEHB(DEHBBase):
             if fidelity != bracket.fidelities[0]:
                 # TODO: check if generalizes to all fidelity spacings
                 config, config_id = self._get_promotion_candidate(
-                    lower_fidelity, fidelity, num_configs
+                    lower_fidelity, fidelity, num_configs,
                 )
                 return config, config_id, parent_id
 
@@ -668,12 +669,12 @@ class DEHB(DEHBBase):
         if len(mutation_pop) < self.de[fidelity]._min_pop_size:
             filler = self.de[fidelity]._min_pop_size - len(mutation_pop) + 1
             new_pop = self.de[fidelity]._init_mutant_population(
-                pop_size=filler, population=self._concat_pops(), target=target, best=self.inc_config
+                pop_size=filler, population=self._concat_pops(), target=target, best=self.inc_config,
             )
             mutation_pop = np.concatenate((mutation_pop, new_pop))
         # generate mutant from among individuals in mutation_pop
         mutant = self.de[fidelity].mutation(
-            current=target, best=self.inc_config, alt_pop=mutation_pop
+            current=target, best=self.inc_config, alt_pop=mutation_pop,
         )
         # perform crossover with selected parent
         config = self.de[fidelity].crossover(target=target, mutant=mutant)
@@ -698,7 +699,7 @@ class DEHB(DEHBBase):
         bracket = None
         start_new_bracket = False
         if len(self.active_brackets) == 0 or np.all(
-            [bracket.is_bracket_done() for bracket in self.active_brackets]
+            [bracket.is_bracket_done() for bracket in self.active_brackets],
         ):
             # start new bracket when no pending jobs from existing brackets or empty bracket list
             start_new_bracket = True
@@ -1023,7 +1024,7 @@ class DEHB(DEHBBase):
         # Sort history to emulate serial execution order if bracket_id available
         if "bracket_id" in history.columns:
             history = history.sort_values(by=["bracket_id", "fidelity", "config_id"]).reset_index(
-                drop=True
+                drop=True,
             )
         else:
             # Fallback ordering for older checkpoints
@@ -1102,7 +1103,7 @@ class DEHB(DEHBBase):
         if self._tell_counter >= self._ask_counter:
             raise NotImplementedError(
                 "Called tell() more often than ask(). \
-                                      Warmstarting with tell is not supported. "
+                                      Warmstarting with tell is not supported. ",
             )
         self._tell_counter += 1
         # Update bracket information
@@ -1153,14 +1154,14 @@ class DEHB(DEHBBase):
 
         if (
             self.save_freq == "step"
-            or (self.save_freq == "incumbent" and inc_changed)
-            and not replay
+            or ((self.save_freq == "incumbent" and inc_changed)
+            and not replay)
         ):
             self.save()
 
     @logger.catch
     def run(
-        self, fevals=None, brackets=None, total_cost=None, single_node_with_gpus=False, **kwargs
+        self, fevals=None, brackets=None, total_cost=None, single_node_with_gpus=False, **kwargs,
     ) -> Tuple[np.array, np.array, np.array]:
         """Main interface to run optimization by DEHB.
 
@@ -1201,27 +1202,27 @@ class DEHB(DEHBBase):
                 "deprecated, since the changes in v0.1.1. Please use the 'saving_freq' "
                 "parameter in the constructor to adjust when to save DEHBs state "
                 "(including history). Please use the 'output_path' parameter to adjust "
-                "where the state and logs should be saved."
+                "where the state and logs should be saved.",
             )
             raise TypeError(
                 "Used deprecated parameters 'save_history', 'save_intermediate' "
-                "and/or 'name'. Please check the logs for more information."
+                "and/or 'name'. Please check the logs for more information.",
             )
         if "verbose" in kwargs:
             logger.warning(
                 "The run parameters 'verbose' is deprecated since the changes in v0.1.2. "
-                "Please use the 'log_level' parameter when initializing DEHB."
+                "Please use the 'log_level' parameter when initializing DEHB.",
             )
             raise TypeError(
                 "Used deprecated parameter 'verbose'. "
-                "Please check the logs for more information."
+                "Please check the logs for more information.",
             )
         # check if run has already been called before
         if self.start is not None:
             logger.warning(
                 "DEHB has already been run. Calling 'run' twice could lead to unintended"
                 + " behavior. Please restart DEHB with an increased compute budget"
-                + " instead of calling 'run' twice."
+                + " instead of calling 'run' twice.",
             )
             self._time_budget_exhausted = False
 
@@ -1243,14 +1244,14 @@ class DEHB(DEHBBase):
             "\nLogging at {} for optimization starting at {}\n".format(
                 Path.cwd() / self.log_filename,
                 time.strftime("%x %X %Z", time.localtime(self.start)),
-            )
+            ),
         )
 
         delimiters = [fevals, brackets, total_cost]
         delim_sum = sum(x is not None for x in delimiters)
         if delim_sum == 0:
             raise ValueError(
-                "Need one of 'fevals', 'brackets' or 'total_cost' as budget for DEHB to run."
+                "Need one of 'fevals', 'brackets' or 'total_cost' as budget for DEHB to run.",
             )
         fevals, brackets = self._adjust_budgets(fevals, brackets)
         # Set alarm for specified runtime budget
@@ -1274,10 +1275,7 @@ class DEHB(DEHBBase):
                 else:
                     if self.n_workers > 1 or isinstance(self.client, Client):
                         self.logger.debug(
-                            "{}/{} worker(s) available.".format(
-                                self._get_worker_count() - len(self.futures),
-                                self._get_worker_count(),
-                            )
+                            f"{self._get_worker_count() - len(self.futures)}/{self._get_worker_count()} worker(s) available.",
                         )
                     # Ask for new job_info
                     job_info = self.ask()
@@ -1291,10 +1289,7 @@ class DEHB(DEHBBase):
         # end of while
         time_taken = time.time() - self.start
         self.logger.info(
-            "End of optimisation! Total duration: {}; Total fevals: {}\n".format(
-                time_taken,
-                len(self.traj),
-            )
+            f"End of optimisation! Total duration: {time_taken}; Total fevals: {len(self.traj)}\n",
         )
         self.logger.info(f"Incumbent score: {self.inc_score}")
         self.logger.info("Incumbent config: ")

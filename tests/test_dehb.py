@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import io
 import os
@@ -81,7 +83,7 @@ def create_toy_searchspace():
     """
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameter(
-        ConfigSpace.UniformFloatHyperparameter("x0", lower=3, upper=10, log=False)
+        ConfigSpace.UniformFloatHyperparameter("x0", lower=3, upper=10, log=False),
     )
     return cs
 
@@ -649,5 +651,5 @@ class TestDeprecation:
         cs = create_toy_searchspace()
         with pytest.raises(TypeError):
             dehb = DEHB(
-                cs, objective_function, len(cs.get_hyperparameters()), min_budget=2, max_budget=5
+                cs, objective_function, len(cs.get_hyperparameters()), min_budget=2, max_budget=5,
             )

@@ -218,7 +218,8 @@ class DEBase:
         # the mapping from unit hypercube to the actual config space may lead to illegal
         # configurations based on conditions defined, which need to be deactivated/removed
         new_config = ConfigSpace.util.deactivate_inactive_hyperparameters(
-            configuration=new_config, configuration_space=self.cs,
+            configuration=new_config,
+            configuration_space=self.cs,
         )
         return new_config
 
@@ -396,7 +397,11 @@ class DE(DEBase):
                 self.inc_config = config
                 self.inc_id = config_id
             self.config_repository.tell_result(
-                config_id, float(fidelity or 0), res["fitness"], res["cost"], info,
+                config_id,
+                float(fidelity or 0),
+                res["fitness"],
+                res["cost"],
+                info,
             )
             traj.append(self.inc_score)
             runtime.append(cost)
@@ -543,7 +548,11 @@ class DE(DEBase):
             info = res["info"] if "info" in res else dict()
             # log result to config repo
             self.config_repository.tell_result(
-                trial_ids[i], float(fidelity or 0), fitness, cost, info,
+                trial_ids[i],
+                float(fidelity or 0),
+                fitness,
+                cost,
+                info,
             )
             # selection -- competition between parent[i] -- child[i]
             ## equality is important for landscape exploration
@@ -766,7 +775,11 @@ class AsyncDE(DE):
                 self.inc_config = pop[i]
                 self.inc_id = pop_ids[i]
             self.config_repository.tell_result(
-                pop_ids[i], float(fidelity or 0), fitness, cost, info,
+                pop_ids[i],
+                float(fidelity or 0),
+                fitness,
+                cost,
+                info,
             )
             traj.append(self.inc_score)
             runtime.append(cost)
@@ -923,7 +936,9 @@ class AsyncDE(DE):
                     f"Generation {i + 1:<2}/{generations:<2} -- {self.inc_score:<0.7}",
                 )
             traj, runtime, history = self.evolve_generation(
-                fidelity=fidelity, best=self.inc_config, **kwargs,
+                fidelity=fidelity,
+                best=self.inc_config,
+                **kwargs,
             )
             self.traj.extend(traj)
             self.runtime.extend(runtime)

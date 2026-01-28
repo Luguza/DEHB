@@ -150,7 +150,8 @@ class DEHBBase:
                 -int(np.log(self.min_fidelity / self.max_fidelity) / np.log(self.eta)) + 1
             )
             self.fidelities = self.max_fidelity * np.power(
-                self.eta, -np.linspace(start=self.max_SH_iter - 1, stop=0, num=self.max_SH_iter),
+                self.eta,
+                -np.linspace(start=self.max_SH_iter - 1, stop=0, num=self.max_SH_iter),
             )
 
     def reset(self, *, reset_seeds: bool = True):
@@ -284,7 +285,10 @@ class DEHB(DEHBBase):
             self.n_workers = n_workers
             if self.n_workers > 1:
                 self.client = Client(
-                    n_workers=self.n_workers, processes=True, threads_per_worker=1, scheduler_port=0,
+                    n_workers=self.n_workers,
+                    processes=True,
+                    threads_per_worker=1,
+                    scheduler_port=0,
                 )  # port 0 makes Dask select a random free port
             else:
                 self.client = None
@@ -515,7 +519,8 @@ class DEHB(DEHBBase):
             )
             self.de[f].population = self.de[f].init_population(pop_size=self._max_pop_size[f])
             self.de[f].population_ids = self.config_repository.announce_population(
-                self.de[f].population, f,
+                self.de[f].population,
+                f,
             )
             self.de[f].fitness = np.array([np.inf] * self._max_pop_size[f])
             # adding attributes to DEHB objects to allow communication across subpopulations
@@ -540,7 +545,9 @@ class DEHB(DEHBBase):
         self.iteration_counter += 1  # iteration counter gives the bracket count or bracket ID
         n_configs, fidelities = self._get_next_iteration(self.iteration_counter)
         bracket = SHBracketManager(
-            n_configs=n_configs, fidelities=fidelities, bracket_id=self.iteration_counter,
+            n_configs=n_configs,
+            fidelities=fidelities,
+            bracket_id=self.iteration_counter,
         )
         self.active_brackets.append(bracket)
         return bracket
@@ -598,13 +605,17 @@ class DEHB(DEHBBase):
                     # skipping already present individual to allow diversity and reduce redundancy
                     continue
                 self.de[high_fidelity].promotion_pop = np.append(
-                    self.de[high_fidelity].promotion_pop, [individual], axis=0,
+                    self.de[high_fidelity].promotion_pop,
+                    [individual],
+                    axis=0,
                 )
                 self.de[high_fidelity].promotion_pop_ids = np.append(
-                    self.de[high_fidelity].promotion_pop_ids, individual_id,
+                    self.de[high_fidelity].promotion_pop_ids,
+                    individual_id,
                 )
                 self.de[high_fidelity].promotion_fitness = np.append(
-                    self.de[high_fidelity].promotion_pop, promotion_candidate_fitness[pop_idx],
+                    self.de[high_fidelity].promotion_pop,
+                    promotion_candidate_fitness[pop_idx],
                 )
             # retaining only n_configs
             self.de[high_fidelity].promotion_pop = self.de[high_fidelity].promotion_pop[:n_configs]
@@ -654,7 +665,9 @@ class DEHB(DEHBBase):
             if fidelity != bracket.fidelities[0]:
                 # TODO: check if generalizes to all fidelity spacings
                 config, config_id = self._get_promotion_candidate(
-                    lower_fidelity, fidelity, num_configs,
+                    lower_fidelity,
+                    fidelity,
+                    num_configs,
                 )
                 return config, config_id, parent_id
 
@@ -669,12 +682,17 @@ class DEHB(DEHBBase):
         if len(mutation_pop) < self.de[fidelity]._min_pop_size:
             filler = self.de[fidelity]._min_pop_size - len(mutation_pop) + 1
             new_pop = self.de[fidelity]._init_mutant_population(
-                pop_size=filler, population=self._concat_pops(), target=target, best=self.inc_config,
+                pop_size=filler,
+                population=self._concat_pops(),
+                target=target,
+                best=self.inc_config,
             )
             mutation_pop = np.concatenate((mutation_pop, new_pop))
         # generate mutant from among individuals in mutation_pop
         mutant = self.de[fidelity].mutation(
-            current=target, best=self.inc_config, alt_pop=mutation_pop,
+            current=target,
+            best=self.inc_config,
+            alt_pop=mutation_pop,
         )
         # perform crossover with selected parent
         config = self.de[fidelity].crossover(target=target, mutant=mutant)
@@ -1152,16 +1170,19 @@ class DEHB(DEHBBase):
             ),
         )
 
-        if (
-            self.save_freq == "step"
-            or ((self.save_freq == "incumbent" and inc_changed)
-            and not replay)
+        if self.save_freq == "step" or (
+            (self.save_freq == "incumbent" and inc_changed) and not replay
         ):
             self.save()
 
     @logger.catch
     def run(
-        self, fevals=None, brackets=None, total_cost=None, single_node_with_gpus=False, **kwargs,
+        self,
+        fevals=None,
+        brackets=None,
+        total_cost=None,
+        single_node_with_gpus=False,
+        **kwargs,
     ) -> Tuple[np.array, np.array, np.array]:
         """Main interface to run optimization by DEHB.
 

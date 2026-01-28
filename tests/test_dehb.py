@@ -651,5 +651,9 @@ class TestDeprecation:
         cs = create_toy_searchspace()
         with pytest.raises(TypeError):
             dehb = DEHB(
-                cs, objective_function, len(cs.get_hyperparameters()), min_budget=2, max_budget=5,
+                cs,
+                objective_function,
+                len(cs.get_hyperparameters()),
+                min_budget=2,
+                max_budget=5,
             )

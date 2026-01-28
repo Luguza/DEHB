@@ -15,16 +15,20 @@ class ConfigItem:
     The results for this configuration are stored in the `results` dict, using the fidelity it has
     been evaluated on as keys.
     """
+
     config_id: int
     config: np.ndarray
     results: dict[float, ResultItem]
 
+
 @dataclass
 class ResultItem:
     """Data class storing the result information of a specific configuration + fidelity."""
+
     score: float
     cost: float
     info: dict[Any, Any]
+
 
 class ConfigRepository:
     """Bookkeeps all configurations used throughout the course of the optimization.
@@ -35,9 +39,10 @@ class ConfigRepository:
 
     The configurations are stored in a list of `ConfigItem`.
     """
+
     def __init__(self) -> None:
         """Initializes the class by calling `self.reset`."""
-        self.configs : list[ConfigItem]
+        self.configs: list[ConfigItem]
         self.reset()
 
     def reset(self) -> None:
@@ -62,8 +67,8 @@ class ConfigRepository:
         config_id = len(self.configs)
         fidelity = float(fidelity or 0)
         result_dict = {
-                fidelity: ResultItem(np.inf, -1, {}),
-            }
+            fidelity: ResultItem(np.inf, -1, {}),
+        }
         config_item = ConfigItem(config_id, config.copy(), result_dict)
         self.configs.append(config_item)
         return config_id
@@ -102,8 +107,8 @@ class ConfigRepository:
             raise IndexError("Config with the given ID can not be found.") from e
 
         result_item = {
-                fidelity: ResultItem(np.inf, -1, {}),
-            }
+            fidelity: ResultItem(np.inf, -1, {}),
+        }
         config_item.results[fidelity] = result_item
 
     def tell_result(self, config_id: int, fidelity: float, score: float, cost: float, info: dict):
@@ -160,6 +165,7 @@ class ConfigRepository:
             serialized_config["config"] = serialized_config["config"].tolist()
             serialized_data.append(serialized_config)
         return serialized_data
+
     def save_state(self, save_path: Path):
         """Saves the current state to `save_path`.
 

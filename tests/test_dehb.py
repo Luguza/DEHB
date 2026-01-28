@@ -13,16 +13,31 @@ from src.dehb.optimizers.dehb import DEHB
 
 
 def patch_open(open_func, files):
-    def open_patched(path, mode="r", buffering=-1, encoding=None,
-                    errors=None, newline=None, closefd=True,
-                    opener=None):
+    def open_patched(
+        path,
+        mode="r",
+        buffering=-1,
+        encoding=None,
+        errors=None,
+        newline=None,
+        closefd=True,
+        opener=None,
+    ):
         if "w" in mode and not os.path.isfile(path):
             files.append(path)
-        return open_func(path, mode=mode, buffering=buffering, 
-                         encoding=encoding, errors=errors,
-                         newline=newline, closefd=closefd, 
-                         opener=opener)
+        return open_func(
+            path,
+            mode=mode,
+            buffering=buffering,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+            closefd=closefd,
+            opener=opener,
+        )
+
     return open_patched
+
 
 @pytest.fixture(autouse=True)
 def cleanup_files(monkeypatch):
@@ -53,6 +68,7 @@ def cleanup_files(monkeypatch):
     for file in files:
         delete_file_with_retry(file)
 
+
 def create_toy_searchspace():
     """Creates a toy searchspace with a single hyperparameter.
 
@@ -65,13 +81,21 @@ def create_toy_searchspace():
     """
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameter(
-        ConfigSpace.UniformFloatHyperparameter("x0", lower=3, upper=10, log=False))
+        ConfigSpace.UniformFloatHyperparameter("x0", lower=3, upper=10, log=False)
+    )
     return cs
 
-def create_toy_optimizer(configspace: ConfigSpace.ConfigurationSpace, min_fidelity: float,
-                         max_fidelity: float, eta: int, objective_function: typing.Callable,
-                         save_freq: typing.Optional[str]=None, output_path: str="logs",
-                         resume: bool=False):
+
+def create_toy_optimizer(
+    configspace: ConfigSpace.ConfigurationSpace,
+    min_fidelity: float,
+    max_fidelity: float,
+    eta: int,
+    objective_function: typing.Callable,
+    save_freq: typing.Optional[str] = None,
+    output_path: str = "logs",
+    resume: bool = False,
+):
     """Creates a DEHB instance.
 
     Args:
@@ -85,9 +109,18 @@ def create_toy_optimizer(configspace: ConfigSpace.ConfigurationSpace, min_fideli
         _type_: _description_
     """
     dim = len(configspace.get_hyperparameters()) if configspace else 1
-    return DEHB(f=objective_function, cs=configspace, dimensions=dim,
-                min_fidelity=min_fidelity, output_path=output_path, resume=resume,
-                max_fidelity=max_fidelity, eta=eta, save_freq=save_freq, n_workers=1)
+    return DEHB(
+        f=objective_function,
+        cs=configspace,
+        dimensions=dim,
+        min_fidelity=min_fidelity,
+        output_path=output_path,
+        resume=resume,
+        max_fidelity=max_fidelity,
+        eta=eta,
+        save_freq=save_freq,
+        n_workers=1,
+    )
 
 
 def objective_function(x: ConfigSpace.Configuration, fidelity: float, **kwargs):
@@ -102,23 +135,27 @@ def objective_function(x: ConfigSpace.Configuration, fidelity: float, **kwargs):
     """
     y = np.random.uniform()
     cost = 5
-    result = {
-        "fitness": y,
-        "cost": cost
-    }
+    result = {"fitness": y, "cost": cost}
     return result
 
-class TestBudgetExhaustion():
+
+class TestBudgetExhaustion:
     """Class that bundles all Budget exhaustion tests.
 
     These tests include budget exhaustion tests for runtime, number of function
     evaluations and number of brackets to run.
     """
+
     def test_runtime_exhaustion(self):
         """Test for runtime budget exhaustion."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                        objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
 
         dehb.run(total_cost=1)
 
@@ -127,8 +164,13 @@ class TestBudgetExhaustion():
     def test_fevals_exhaustion(self):
         """Test for function evaluations budget exhaustion."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
 
         dehb.traj.append("Just needed for the test")
 
@@ -137,36 +179,60 @@ class TestBudgetExhaustion():
     def test_brackets_exhaustion(self):
         """Test for bracket budget exhaustion."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                        objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
 
         dehb.iteration_counter = 5
 
         assert dehb._is_run_budget_exhausted(brackets=1), "Run budget should be exhausted"
 
+
 class TestInitialization:
     """Class that bundles all tests regarding the initialization of DEHB."""
+
     def test_higher_min_fidelity(self):
         """Test that verifies, that DEHB breaks if min_fidelity > max_fidelity."""
         cs = create_toy_searchspace()
         with pytest.raises(AssertionError):
-            create_toy_optimizer(configspace=cs, min_fidelity=28, max_fidelity=27, eta=3,
-                                        objective_function=objective_function)
+            create_toy_optimizer(
+                configspace=cs,
+                min_fidelity=28,
+                max_fidelity=27,
+                eta=3,
+                objective_function=objective_function,
+            )
 
     def test_equal_min_max_fidelity(self):
         """Test that verifies, that DEHB breaks if min_fidelity == max_fidelity."""
         cs = create_toy_searchspace()
         with pytest.raises(AssertionError):
-            create_toy_optimizer(configspace=cs, min_fidelity=27, max_fidelity=27, eta=3,
-                                        objective_function=objective_function)
+            create_toy_optimizer(
+                configspace=cs,
+                min_fidelity=27,
+                max_fidelity=27,
+                eta=3,
+                objective_function=objective_function,
+            )
+
 
 class TestConfigID:
     """Class that bundles all tests regarding config ID functionality."""
+
     def test_initialization(self):
         """Verifies, that the initial population is properly tracked by the config repository."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         # calculate how many configurations have been sampled for the initial populations
         num_configs = 0
         for de_inst in dehb.de.values():
@@ -178,8 +244,13 @@ class TestConfigID:
     def test_single_bracket(self):
         """Verifies, that the population is continously tracked over the run of a single bracket."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         # calculate how many configurations have been sampled for the initial populations
         num_initial_configs = 0
         for de_inst in dehb.de.values():
@@ -193,13 +264,20 @@ class TestConfigID:
         # DEHB bracket!
         assert len(dehb.config_repository.configs) == num_initial_configs + 9
 
+
 class TestAskTell:
     """Class that bundles all tests regarding the ask and tell functionality of DEHB."""
+
     def test_all_fields_available(self):
         """Verifies, that all fields needed are present in job info returned by ask."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         conf = dehb.ask()
         assert "config" in conf
         assert "bracket_id" in conf
@@ -211,8 +289,13 @@ class TestAskTell:
         if a configspace is passed.
         """
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         job_info = dehb.ask()
         assert isinstance(job_info["config"], ConfigSpace.Configuration)
 
@@ -220,16 +303,26 @@ class TestAskTell:
         """Verifies, that the returned config by ask() is of type Configuration
         if a configspace is passed.
         """
-        dehb = create_toy_optimizer(configspace=None, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=None,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         job_info = dehb.ask()
         assert isinstance(job_info["config"], np.ndarray)
 
     def test_ask_multiple(self):
         """Verifies, that ask can return multiple configs."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         job_infos = dehb.ask(2)
 
         assert len(job_infos) == 2
@@ -238,8 +331,13 @@ class TestAskTell:
     def test_ask_twice_different(self):
         """Verifies, that ask can return multiple configs."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         job_info_a = dehb.ask()
         job_info_b = dehb.ask()
         assert job_info_a != job_info_b
@@ -247,8 +345,13 @@ class TestAskTell:
     def test_tell_twice(self):
         """Verifies, that tell should not be allowed to be called more often than ask."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         # Get single job info
         job_info = dehb.ask()
         res = objective_function(job_info["config"], job_info["fidelity"])
@@ -262,8 +365,13 @@ class TestAskTell:
     def test_tell_successful(self):
         """Verifies, that tell successfully saves results."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         job_info = dehb.ask()
         id = job_info["config_id"]
         fid = job_info["fidelity"]
@@ -283,41 +391,65 @@ class TestAskTell:
     def test_tell_error(self):
         """Verifies, that tell throws an error if config ID is non-existent."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            objective_function=objective_function,
+        )
         # get config
         job_info = dehb.ask()
         # adjust config id to non existing id
         job_info["config_id"] = 1337
         # create random result item
-        result = {
-            "fitness": 42,
-            "cost": 123
-        }
+        result = {"fitness": 42, "cost": 123}
         # telling with wrong config_id should throw an error
         with pytest.raises(IndexError):
             dehb.tell(job_info, result)
 
+
 class TestLogging:
     """Class that bundles all tests regarding the logging functionality of DEHB."""
+
     def test_init_no_save_freq(self):
         """Verifies, that default initializatin is 'end'."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq=None, objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq=None,
+            objective_function=objective_function,
+        )
         assert dehb.save_freq == "end"
+
     def test_init_unkown_save_freq(self):
         """Verifies, that default initializatin if save_freq is unkown is 'end'."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="7Hz", objective_function=objective_function)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="7Hz",
+            objective_function=objective_function,
+        )
         assert dehb.save_freq == "end"
+
     def test_state_before_eval(self):
         """Verifies, that returned state consists of all necessary fields."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="end", objective_function=objective_function,
-                                    output_path="state_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="end",
+            objective_function=objective_function,
+            output_path="state_test",
+        )
         state = dehb._get_state()
         hb_params = state["HB_params"]
         assert hb_params["min_fidelity"] == 3
@@ -334,12 +466,19 @@ class TestLogging:
         de_params.pop("output_path")
         for key in de_params:
             assert de_params[key] == dehb.de_params[key]
+
     def test_freq_step(self):
         """Verifies, that the save_freq 'step' saves the state at the right times."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="step_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="step_test",
+        )
         # Single ask/tell
         job_info = dehb.ask()
         result = objective_function(job_info["config"], job_info["fidelity"])
@@ -366,9 +505,15 @@ class TestLogging:
     def test_freq_incumbent(self):
         """Verifies, that the save_freq 'incumbent' saves the state at the right times."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="incumbent", objective_function=objective_function,
-                                    output_path="incumbent_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="incumbent",
+            objective_function=objective_function,
+            output_path="incumbent_test",
+        )
         # Single ask/tell
         job_info = dehb.ask()
         result = objective_function(job_info["config"], job_info["fidelity"])
@@ -392,14 +537,22 @@ class TestLogging:
 
         assert len(history) == len(dehb.history) - 1
 
+
 class TestRestart:
     """Class that bundles all tests regarding the restarting functionality of DEHB."""
+
     def test_restart_run(self):
         """Verifies, that restarting after calling "run" works as expected."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_run_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="restart_run_test",
+        )
         # Run for a single bracket
         traj, _, _ = dehb.run(brackets=1)
         n_configs = len(dehb.config_repository.configs)
@@ -407,9 +560,16 @@ class TestRestart:
         len_traj = len(traj)
 
         # Load checkpoint saved by previous run
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_run_test", resume=True)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="restart_run_test",
+            resume=True,
+        )
 
         assert n_configs == len(dehb.config_repository.configs)
         assert it_counter == dehb.iteration_counter
@@ -418,9 +578,15 @@ class TestRestart:
     def test_restart_ask_tell(self):
         """Verifies, that restarting after using ask & tell works as expected."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_ask_tell_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="restart_ask_tell_test",
+        )
         # Run for 10 feval
         for _ in range(10):
             job_info = dehb.ask()
@@ -432,9 +598,16 @@ class TestRestart:
         len_traj = len(dehb.traj)
 
         # Load checkpoint saved by previous run
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_ask_tell_test", resume=True)
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="restart_ask_tell_test",
+            resume=True,
+        )
 
         assert n_configs == len(dehb.config_repository.configs)
         assert it_counter == dehb.iteration_counter
@@ -443,22 +616,38 @@ class TestRestart:
     def test_restart_non_matching_configs(self):
         """Verifies, that restarting throws an error when dehb instances are configured differently."""
         cs = create_toy_searchspace()
-        dehb = create_toy_optimizer(configspace=cs, min_fidelity=3, max_fidelity=27, eta=3,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_error_test")
+        dehb = create_toy_optimizer(
+            configspace=cs,
+            min_fidelity=3,
+            max_fidelity=27,
+            eta=3,
+            save_freq="step",
+            objective_function=objective_function,
+            output_path="restart_error_test",
+        )
         dehb.save()
 
         # Try to load checkpoint with different conifguration
         with pytest.raises(AttributeError):
-            dehb = create_toy_optimizer(configspace=cs, min_fidelity=8, max_fidelity=123, eta=42,
-                                    save_freq="step", objective_function=objective_function,
-                                    output_path="restart_error_test", resume=True)
+            dehb = create_toy_optimizer(
+                configspace=cs,
+                min_fidelity=8,
+                max_fidelity=123,
+                eta=42,
+                save_freq="step",
+                objective_function=objective_function,
+                output_path="restart_error_test",
+                resume=True,
+            )
+
 
 class TestDeprecation:
     """Class that bundles all tests regarding deprecation warnings."""
+
     def test_budget_deprecation(self):
         """Verifies, that an error is thrown if the user uses the old budget interface."""
         cs = create_toy_searchspace()
         with pytest.raises(TypeError):
-            dehb = DEHB(cs, objective_function, len(cs.get_hyperparameters()), min_budget=2,
-                        max_budget=5)
+            dehb = DEHB(
+                cs, objective_function, len(cs.get_hyperparameters()), min_budget=2, max_budget=5
+            )

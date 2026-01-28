@@ -5,20 +5,21 @@ import pytest
 from src.dehb.utils import ConfigRepository
 
 
-class TestConfigAnnouncing():
+class TestConfigAnnouncing:
     """Class that bundles all tests for announcing configurations to the repository."""
+
     def test_single_config_fidelity(self):
         """Tests announcing single config with a specified fidelity."""
         repo = ConfigRepository()
         config = np.array([0.5])
 
-        config_id = repo.announce_config(config, 2.)
+        config_id = repo.announce_config(config, 2.0)
 
         assert len(repo.configs) == 1
         assert config_id == 0
         assert repo.configs[config_id].config == config
         # result entry properly given
-        assert repo.configs[config_id].results[2.] is not None
+        assert repo.configs[config_id].results[2.0] is not None
 
     def test_single_config_no_fidelity(self):
         """Tests announcing single config with a specified fidelity."""
@@ -31,7 +32,7 @@ class TestConfigAnnouncing():
         assert config_id == 0
         assert repo.configs[config_id].config == config
         # result entry properly given
-        assert repo.configs[config_id].results[0.] is not None
+        assert repo.configs[config_id].results[0.0] is not None
 
     def test_population(self):
         """Tests announcing a whole population."""
@@ -49,8 +50,10 @@ class TestConfigAnnouncing():
         for conf_id in config_ids:
             assert repo.configs[conf_id].config == pop[conf_id]
 
-class TestGetConfig():
+
+class TestGetConfig:
     """Class that bundles all tests regarding retrieving of configs via config ID."""
+
     def test_get_successful(self):
         """Test that get retrieves the right configuration."""
         repo = ConfigRepository()
@@ -72,8 +75,10 @@ class TestGetConfig():
         with pytest.raises(IndexError):
             repo.get(config_id + 1)
 
-class TestTellResult():
+
+class TestTellResult:
     """This class bundles all tests regarding the `tell_result` method."""
+
     def test_tell_result_successful(self):
         repo = ConfigRepository()
         config = np.array([0.5])

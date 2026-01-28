@@ -3,8 +3,9 @@ import importlib
 import pytest
 
 
-class TestImports():
+class TestImports:
     """This class bundles all import tests for the DEHB project."""
+
     def test_dehb_import(self):
         """Test if DEHB can be imported properly."""
         try:

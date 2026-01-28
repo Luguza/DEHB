@@ -4,6 +4,7 @@ import ConfigSpace
 import pytest
 from src.dehb.optimizers.de import DEBase
 
+
 def create_toy_DEBase(configspace: ConfigSpace.ConfigurationSpace):
     """Creates a toy DEBase instance for conversion tests.
 
@@ -14,15 +15,26 @@ def create_toy_DEBase(configspace: ConfigSpace.ConfigurationSpace):
         DEBase: DEBase object for testing
     """
     dim = len(configspace.get_hyperparameters())
-    return DEBase(f=lambda: 1, cs=configspace, dimensions=dim, pop_size=10, max_age=5,
-                  mutation_factor=0.5, crossover_prob=0.5, strategy="rand1_bin", fidelity=1)
+    return DEBase(
+        f=lambda: 1,
+        cs=configspace,
+        dimensions=dim,
+        pop_size=10,
+        max_age=5,
+        mutation_factor=0.5,
+        crossover_prob=0.5,
+        strategy="rand1_bin",
+        fidelity=1,
+    )
 
-class TestConversion():
+
+class TestConversion:
     """Class that bundles all ConfigSpace/vector conversion tests.
 
     These tests include conversion tests for constant, categorical, ordinal,
     float and integer hyperparameters.
     """
+
     def test_constant(self):
         """Test for constant hyperparameter."""
         cs = ConfigSpace.ConfigurationSpace(
@@ -65,7 +77,8 @@ class TestConversion():
         """Test for ordinal hyperparameter."""
         cs = ConfigSpace.ConfigurationSpace()
         cs.add_hyperparameter(
-            ConfigSpace.OrdinalHyperparameter("test_ordinal", sequence=[10, 20, 30]))
+            ConfigSpace.OrdinalHyperparameter("test_ordinal", sequence=[10, 20, 30])
+        )
 
         de = create_toy_DEBase(cs)
 

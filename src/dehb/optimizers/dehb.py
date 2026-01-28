@@ -67,9 +67,7 @@ class DEHBBase:
 
         # Benchmark related variables
         self.cs = cs
-        self.use_configspace = (
-            bool(isinstance(self.cs, ConfigSpace.ConfigurationSpace))
-        )
+        self.use_configspace = bool(isinstance(self.cs, ConfigSpace.ConfigurationSpace))
         if self.use_configspace:
             self.cs.seed(self._original_seed)
             self.dimensions = len(self.cs.get_hyperparameters())

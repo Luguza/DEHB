@@ -29,6 +29,7 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
+        files: ^(src|tests)/.*\.py$
         additional_dependencies:
           - "attrs"
           - "types-pyyaml"

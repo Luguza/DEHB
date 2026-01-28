@@ -241,7 +241,8 @@ max-args = 10 # Changed from default of 5
 
 [tool.mypy]
 python_version = "3.8"
-packages = ["dehb", "tests"]
+mypy_path = "src"
+namespace_packages = false
 
 show_error_codes = true
 

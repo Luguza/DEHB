@@ -1042,6 +1042,17 @@ class DEHB(DEHBBase):
             # Fallback ordering for older checkpoints
             history = history.sort_values(by=["fidelity", "config_id"]).reset_index(drop=True)
 
+        # Pre-announce all configs from history to ensure repository is properly populated
+        # This prevents IndexError when tell(replay=True) tries to access config_ids
+        for _, row in history.iterrows():
+            config_id = int(row["config_id"])
+            # Ensure all config_ids up to this one exist in the repository
+            while len(self.config_repository.configs) <= config_id:
+                self.config_repository.announce_config(
+                    np.array(row["config"]), 
+                    float(row["fidelity"])
+                )
+                
         # Replay history in the chosen order
         for _, row in history.iterrows():
             job_info = {
